@@ -1,0 +1,3 @@
+packages:
+    cabal-cargo/cabal-cargo.cabal
+    test-project/test-project.cabal

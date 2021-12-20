@@ -1,0 +1,51 @@
+cabal-version:   2.4
+name:            cabal-cargo
+version:         0.0.0.0
+synopsis:        See README for more info
+description:
+  See README for more info.
+  See [README.md](https://github.com/lancelet/cabal-cargo#cabal-cargo) for more details.
+
+homepage:        https://github.com/lancelet/cabal-cargo
+bug-reports:     https://github.com/lancelet/cabal-cargo/issues
+license:         MIT
+license-file:    LICENSE
+author:          Jonathan Merritt
+maintainer:      Jonathan Merritt <j.s.merritt@gmail.com>
+copyright:       2021 Jonathan Merritt
+category:        Build
+build-type:      Simple
+extra-doc-files:
+  CHANGELOG.md
+  README.md
+
+tested-with:     GHC ==8.10.7 || ==9.2.1
+
+source-repository head
+  type:     git
+  location: https://github.com/lancelet/cabal-cargo.git
+
+common common-options
+  build-depends:    base >=4.14.3 && <4.17
+  ghc-options:
+    -Wall -Wcompat -Widentities -Wincomplete-uni-patterns
+    -Wincomplete-record-updates -Wredundant-constraints
+    -Wnoncanonical-monad-instances -fhide-source-paths
+    -Wmissing-export-lists -Wpartial-fields
+    -Wmissing-deriving-strategies -fwrite-ide-info -hiedir=.hie
+    -Wunused-packages
+
+  default-language: Haskell2010
+
+library
+  import:          common-options
+  hs-source-dirs:  src
+  exposed-modules:
+    Cabgo
+    Cabgo.Cargo
+
+  build-depends:
+    , Cabal      ^>=3.6
+    , directory  ^>=1.3.7.0
+    , filepath   ^>=1.4.2.2
+    , process    ^>=1.6.13.2

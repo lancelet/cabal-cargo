@@ -1,0 +1,19 @@
+[package]
+name = "rustbits"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+# staticlib is not working at the moment... getting strange linkage errors
+# on Windows
+#crate-type = ["staticlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+cbindgen = "0.20.0"
+
+[dependencies]
+nalgebra = "0.29.0"
