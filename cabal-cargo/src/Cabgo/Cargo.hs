@@ -1,8 +1,8 @@
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Cabgo.Cargo
-  ( cargoBuild
+  ( BuildType(Debug, Release)
+  , cargoBuild
   , cargoClean
   ) where
 
@@ -19,18 +19,30 @@ import           System.Process                 ( CreateProcess
                                                 , withCreateProcess
                                                 )
 
+data BuildType
+  = Debug
+  | Release
+  deriving stock (Eq, Show)
+
 -- | Run @cargo build@.
 cargoBuild
-  :: FilePath  -- ^ Path to the @cargo@ executable.
-  -> FilePath  -- ^ Working directory for the @cargo@ command.
+  :: FilePath   -- ^ Path to the @cargo@ executable.
+  -> FilePath   -- ^ Working directory for the @cargo@ command.
+  -> BuildType  -- ^ Whether to do a debug or release build.
   -> IO ()
-cargoBuild cargoExe cargoCwd = do
-  let createProcess :: CreateProcess
-      createProcess = (proc cargoExe ["build"]) { cwd     = Just cargoCwd
-                                                , std_in  = NoStream
-                                                , std_out = Inherit
-                                                , std_err = Inherit
-                                                }
+cargoBuild cargoExe cargoCwd buildType = do
+  let profileFlags :: [String]
+      profileFlags = case buildType of
+        Debug   -> ["--profile", "dev"]
+        Release -> ["--profile", "release"]
+
+      createProcess :: CreateProcess
+      createProcess = (proc cargoExe ("build" : profileFlags))
+        { cwd     = Just cargoCwd
+        , std_in  = NoStream
+        , std_out = Inherit
+        , std_err = Inherit
+        }
 
   exitCode <- withCreateProcess createProcess
     $ \_ _ _ processHandle -> waitForProcess processHandle

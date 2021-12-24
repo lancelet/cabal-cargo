@@ -16,8 +16,8 @@ category:        Build
 extra-doc-files:
   CHANGELOG.md
   README.md
-  rustsrc/Cargo.toml
   rustsrc/build.rs
+  rustsrc/Cargo.toml
   rustsrc/cbindgen.toml
   rustsrc/src/lib.rs
 

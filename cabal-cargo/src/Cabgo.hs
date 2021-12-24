@@ -1,9 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE RecordWildCards #-}
 module Cabgo
-  ( defaultMain
+  ( RustProject(..)
+  , defaultMain
   ) where
 
-import           Cabgo.Cargo                    ( cargoBuild )
+import           Cabgo.Cargo                    ( BuildType(Debug, Release)
+                                                , cargoBuild
+                                                )
 import           Distribution.PackageDescription
                                                 ( HookedBuildInfo
                                                 , PackageDescription
@@ -11,6 +16,7 @@ import           Distribution.PackageDescription
                                                 , includes
                                                 )
 import           Distribution.Simple            ( Args
+                                                , DebugInfoLevel(NoDebugInfo)
                                                 , UserHooks
                                                 , buildHook
                                                 , defaultMainWithHooks
@@ -20,6 +26,7 @@ import           Distribution.Simple            ( Args
                                                 )
 import           Distribution.Simple.LocalBuildInfo
                                                 ( LocalBuildInfo
+                                                , withDebugInfo
                                                 , withPrograms
                                                 )
 import           Distribution.Simple.Program    ( Program
@@ -33,58 +40,77 @@ import           Distribution.Types.BuildInfo   ( BuildInfo
                                                 , extraLibs
                                                 , includeDirs
                                                 )
-import           System.Directory               ( getCurrentDirectory )
+import           System.Directory               ( createDirectoryIfMissing
+                                                , getCurrentDirectory
+                                                )
 import           System.FilePath                ( (</>) )
 
 
-type RustProjectDir = FilePath
+data RustProject = RustProject
+  { rustProjectDir      :: FilePath
+  , rustProjectLibs     :: [String]
+  , rustProjectIncludes :: [String]
+  }
+  deriving stock (Eq, Show)
 
 
-defaultMain :: RustProjectDir -> IO ()
-defaultMain projDir = defaultMainWithHooks (cabgoUserHooks projDir)
+defaultMain :: RustProject -> IO ()
+defaultMain proj = defaultMainWithHooks (cabgoUserHooks proj)
 
 
-cabgoUserHooks :: RustProjectDir -> UserHooks
-cabgoUserHooks projDir = simpleUserHooks { hookedPrograms = cabgoHookedPrograms
-                                         , preBuild = cabgoPreBuild projDir
-                                         , buildHook = cabgoBuildHook projDir
-                                         }
+cabgoUserHooks :: RustProject -> UserHooks
+cabgoUserHooks proj = simpleUserHooks { hookedPrograms = cabgoHookedPrograms
+                                      , preBuild       = cabgoPreBuild proj
+                                      , buildHook      = cabgoBuildHook proj
+                                      }
 
 
 cabgoHookedPrograms :: [Program]
 cabgoHookedPrograms = [simpleProgram "cargo"]
 
 
-cabgoPreBuild :: RustProjectDir -> Args -> BuildFlags -> IO HookedBuildInfo
-cabgoPreBuild projDir _ _ = do
+cabgoPreBuild :: RustProject -> Args -> BuildFlags -> IO HookedBuildInfo
+cabgoPreBuild RustProject {..} _ _ = do
   cwd <- getCurrentDirectory
+
+  let releaseDir, debugDir :: FilePath
+      releaseDir = cwd </> rustProjectDir </> "target" </> "release"
+      debugDir   = cwd </> rustProjectDir </> "target" </> "debug"
+  createDirectoryIfMissing True releaseDir
+  createDirectoryIfMissing True debugDir
+
+  -- Ideally, we would know if we were doing a release or debug build, but
+  -- AFAICT, that information is not available here. So, instead, we add BOTH
+  -- a release and debug directory for good measure.
   let buildInfo :: BuildInfo
-      buildInfo = emptyBuildInfo
-        { extraLibs    = ["rustbits"]
-        , extraLibDirs = [
-              cwd </> projDir </> "target" </> "release"
-            , cwd </> projDir </> "target" </> "debug"
-        ]
-        , includes     = ["rustbits.h"]
-        , includeDirs  = [cwd </> projDir]
-        }
+      buildInfo = emptyBuildInfo { extraLibs    = rustProjectLibs
+                                 , extraLibDirs = [releaseDir, debugDir]
+                                 , includes     = rustProjectIncludes
+                                 , includeDirs  = [cwd </> rustProjectDir]
+                                 }
+
   pure (Just buildInfo, [])
 
 
 cabgoBuildHook
-  :: RustProjectDir
+  :: RustProject
   -> PackageDescription
   -> LocalBuildInfo
   -> UserHooks
   -> BuildFlags
   -> IO ()
-cabgoBuildHook projDir packageDescription localBuildInfo userHooks buildFlags =
-  do
-    let cargoExe :: FilePath
-        cargoExe = getCargoExe localBuildInfo
+cabgoBuildHook RustProject {..} packageDescription localBuildInfo userHooks buildFlags
+  = do
+    let buildType :: BuildType
+        buildType = case withDebugInfo localBuildInfo of
+          NoDebugInfo -> Release
+          _           -> Debug
 
-    putStrLn $ ">>> Starting cargo build in directory '" ++ projDir ++ "'..."
-    cargoBuild cargoExe projDir
+    putStrLn
+      $  ">>> Starting cargo build in directory '"
+      ++ rustProjectDir
+      ++ "'..."
+    cargoBuild (getCargoExe localBuildInfo) rustProjectDir buildType
     putStrLn ">>> Finished cargo build."
 
     buildHook simpleUserHooks
