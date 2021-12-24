@@ -56,3 +56,4 @@ TAGS
 
 Cargo.lock
 test-project/rustsrc/rustbits.h
+test-project/rustsrc/target
