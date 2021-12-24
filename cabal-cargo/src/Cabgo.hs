@@ -54,10 +54,15 @@ data RustProject = RustProject
   deriving stock (Eq, Show)
 
 
+-- | Main entry point.
+--
+-- Call this from @main@ in your @Setup.hs@ file.
 defaultMain :: RustProject -> IO ()
 defaultMain proj = defaultMainWithHooks (cabgoUserHooks proj)
 
 
+-- | User hooks to be installed to build the Rust project and link it to the
+--   Haskell binaries.
 cabgoUserHooks :: RustProject -> UserHooks
 cabgoUserHooks proj = simpleUserHooks { hookedPrograms = cabgoHookedPrograms
                                       , preBuild       = cabgoPreBuild proj
@@ -65,10 +70,28 @@ cabgoUserHooks proj = simpleUserHooks { hookedPrograms = cabgoHookedPrograms
                                       }
 
 
+-- | Hook to use @cabal@ to search for the @cargo@ executable.
 cabgoHookedPrograms :: [Program]
 cabgoHookedPrograms = [simpleProgram "cargo"]
 
 
+-- | PreBuild hook.
+--
+-- This hook does the following:
+--
+--   1. Adds the release and debug build directories from the Rust project to
+--      the @extra-lib-dirs@ build info parameter. This allows @cabal@ to find
+--      the compiled libraries from the Rust project.
+--
+--   2. Adds the Rust library(ies) to the @extra-libs@ build info parameter.
+--      This specifies that the Rust library(ies) should be linked by @cabal@.
+--
+--   3. Adds the Rust includes to the @includes@ build info parameter. This
+--      allows the Haskell project to use @capi@ foreign imports by including
+--      the C header files from the Rust project.
+--
+--   4. Adds the Rust project directory to the @include-dirs@ build info
+--      parameter. This allows the include files to be found by @cabal@.
 cabgoPreBuild :: RustProject -> Args -> BuildFlags -> IO HookedBuildInfo
 cabgoPreBuild RustProject {..} _ _ = do
   cwd <- getCurrentDirectory
@@ -92,6 +115,10 @@ cabgoPreBuild RustProject {..} _ _ = do
   pure (Just buildInfo, [])
 
 
+-- | Build hook.
+--
+-- This calls @cargo build@ to build the Rust project, and then calls the
+-- default build hook.
 cabgoBuildHook
   :: RustProject
   -> PackageDescription
@@ -120,6 +147,7 @@ cabgoBuildHook RustProject {..} packageDescription localBuildInfo userHooks buil
               buildFlags
 
 
+-- | Get the path to the @cargo@ executable.
 getCargoExe :: LocalBuildInfo -> FilePath
 getCargoExe localBuildInfo =
   case lookupProgram (simpleProgram "cargo") (withPrograms localBuildInfo) of
