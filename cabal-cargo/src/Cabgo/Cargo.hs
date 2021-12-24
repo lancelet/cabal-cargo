@@ -19,10 +19,13 @@ import           System.Process                 ( CreateProcess
                                                 , withCreateProcess
                                                 )
 
+
+-- | Type of build for @cargo@ to perform.
 data BuildType
   = Debug
   | Release
   deriving stock (Eq, Show)
+
 
 -- | Run @cargo build@.
 cargoBuild
@@ -51,8 +54,12 @@ cargoBuild cargoExe cargoCwd buildType = do
     then pure ()
     else error $ "cargo build failed; exit code: " ++ show exitCode
 
+
 -- | Run @cargo clean@.
-cargoClean :: FilePath -> FilePath -> IO ()
+cargoClean
+  :: FilePath  -- ^ Path to the @cargo@ executable.
+  -> FilePath  -- ^ Working directory for the @cargo@ command.
+  -> IO ()
 cargoClean cargoExe cargoCwd = do
   let createProcess :: CreateProcess
       createProcess = (proc cargoExe ["build"]) { cwd     = Just cargoCwd

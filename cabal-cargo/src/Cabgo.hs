@@ -46,9 +46,16 @@ import           System.Directory               ( createDirectoryIfMissing
 import           System.FilePath                ( (</>) )
 
 
+-- | Defines a Rust project.
 data RustProject = RustProject
-  { rustProjectDir      :: FilePath
+  { -- | Subdirectory of the project containing the Rust project.
+    --
+    -- eg. @"rustSrc"@
+    rustProjectDir      :: FilePath
+    -- | List of libraries produced by the Rust project.
   , rustProjectLibs     :: [String]
+    -- | List of include files (C headers) in the top level directory of the
+    --   Rust project.
   , rustProjectIncludes :: [String]
   }
   deriving stock (Eq, Show)
