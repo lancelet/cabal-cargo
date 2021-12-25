@@ -51,3 +51,7 @@ jobs:
     - name: Test
       run: |
         cabal test all --test-show-details=always
+
+    - name: Run
+      run: |
+        cabal run test-project:test-project
