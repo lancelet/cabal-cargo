@@ -53,8 +53,8 @@ libraries have to take.
 
 ## How do I use it in my own project?
 
-It's currently experimental. But take a look at the `test-project` directory and
-go for it!
+It's currently experimental. But take a look at the
+[`test-project`](../test-project) directory and go for it!
 
 ## "More of a comment than a question: I have a better way to do all this; your approach is silly!"
 
