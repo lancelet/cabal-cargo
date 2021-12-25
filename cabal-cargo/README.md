@@ -56,7 +56,7 @@ libraries have to take.
 It's currently experimental. But take a look at the `test-project` directory and
 go for it!
 
-## "I have a better way to do all this; your approach is silly!"
+## "More of a comment than a question: I have a better way to do all this; your approach is silly!"
 
 Go for it! I'd like a good way to integrate Rust with my Haskell projects, and I
 don't care one whit if it's not my own approach. Start exploring, and please
